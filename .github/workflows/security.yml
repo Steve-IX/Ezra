@@ -69,8 +69,6 @@ jobs:
     
     - name: Run CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-      with:
-        languages: javascript,python,go
 
   secret-scan:
     runs-on: ubuntu-latest
