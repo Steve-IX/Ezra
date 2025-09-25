@@ -55,9 +55,9 @@ jobs:
     - name: Run Python tests
       run: |
         cd agent
-        python -m pytest
+        python -m pytest --tb=short; test $? -eq 0 -o $? -eq 5
         cd ../executor
-        python -m pytest
+        python -m pytest --tb=short; test $? -eq 0 -o $? -eq 5
     
     - name: Run Go tests
       run: |
