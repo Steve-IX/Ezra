@@ -19,7 +19,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
     
     - name: Setup Python
       uses: actions/setup-python@v4
@@ -95,7 +94,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
     
     - name: Setup Python
       uses: actions/setup-python@v4
