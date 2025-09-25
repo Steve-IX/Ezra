@@ -64,7 +64,7 @@ export class GoogleProvider {
     return { requests: 60, tokens: 150000 }; // Per minute
   }
 
-  private calculateConfidence(response: any): number {
+  private calculateConfidence(_response: any): number {
     // Simple confidence calculation for Google Gemini
     // This is a placeholder - Google's API doesn't provide detailed confidence metrics
     return 0.8;

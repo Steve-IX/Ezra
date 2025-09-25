@@ -22,8 +22,8 @@ export class AnthropicProvider {
       throw new Error('Anthropic client not configured');
     }
 
-    const systemPrompt = request.system_prompt || '';
-    const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${request.prompt}` : request.prompt;
+    // const systemPrompt = request.system_prompt || '';
+    // const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${request.prompt}` : request.prompt;
 
     const response = await this.client.messages.create({
       model: request.model,

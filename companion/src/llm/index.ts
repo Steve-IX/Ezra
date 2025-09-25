@@ -49,8 +49,8 @@ export class LLMRouter {
 
   getAvailableProviders(): LLMProvider[] {
     return Array.from(this.providers.entries())
-      .filter(([_, provider]) => provider.isAvailable())
-      .map(([name, _]) => name);
+      .filter(([, provider]) => provider.isAvailable())
+      .map(([name]) => name);
   }
 
   getBestProvider(task: string): LLMProvider {
