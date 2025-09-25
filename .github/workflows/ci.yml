@@ -54,10 +54,11 @@ jobs:
     
     - name: Run Python tests
       run: |
+        set -e
         cd agent
-        python -m pytest --tb=short; test $? -eq 0 -o $? -eq 5
+        python -m pytest --tb=short || if [ $? -eq 5 ]; then echo "No tests found in agent directory"; exit 0; else exit $?; fi
         cd ../executor
-        python -m pytest --tb=short; test $? -eq 0 -o $? -eq 5
+        python -m pytest --tb=short || if [ $? -eq 5 ]; then echo "No tests found in executor directory"; exit 0; else exit $?; fi
     
     - name: Run Go tests
       run: |
