@@ -50,9 +50,9 @@ jobs:
       run: |
         cd agent
         pip install pip-audit
-        pip-audit --local
+        pip-audit --skip-editable --local
         cd ../executor
-        pip-audit --local
+        pip-audit --skip-editable --local
     
     - name: Run go mod audit
       run: |
