@@ -50,7 +50,7 @@ class ActionExecutor:
                 # If action failed and is critical, stop execution
                 if result.status == "failed" and action.get("risk_level") == "critical":
                     logger.error(
-                        f"Critical action failed, stopping execution: {action.get('id')}"
+                        f"Critical action failed, stopping execution: {action.get('id')}",
                     )
                     break
 

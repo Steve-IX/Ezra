@@ -18,9 +18,15 @@ console = Console()
 
 @app.command()
 def init(
-    companion_url: str = typer.Option("http://localhost:3000", "--companion-url", help="Companion server URL"),
-    device_id: str | None = typer.Option(None, "--device-id", help="Device identifier"),
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    companion_url: str = typer.Option(
+        "http://localhost:3000", "--companion-url", help="Companion server URL",
+    ),
+    device_id: str | None = typer.Option(
+        None, "--device-id", help="Device identifier",
+    ),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Initialize agent configuration."""
     config_manager = ConfigManager(config_file)
@@ -43,7 +49,9 @@ def init(
 
 @app.command()
 def config(
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Show current configuration."""
     config_manager = ConfigManager(config_file)
@@ -68,7 +76,9 @@ def config(
 
 @app.command()
 def scan(
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Scan device information."""
     config_manager = ConfigManager(config_file)
@@ -105,7 +115,9 @@ def scan(
 
 @app.command()
 def test(
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Test connection to companion server."""
     config_manager = ConfigManager(config_file)
@@ -139,7 +151,6 @@ def test(
 @app.command()
 def install(
     service: bool = typer.Option(False, "--service", help="Install as system service"),
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
 ):
     """Install agent as system service."""
     if not service:
@@ -169,6 +180,8 @@ WantedBy=multi-user.target
 
         service_file = Path("/etc/systemd/system/ezra-agent.service")
         console.print(f"📝 Creating service file: {service_file}")
+        console.print("Service content:")
+        console.print(service_content)
         # Note: This would require sudo privileges
         console.print("⚠️  Run with sudo to install system service")
 

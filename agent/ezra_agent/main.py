@@ -33,7 +33,7 @@ class AgentDaemon:
         # Scan device information
         self.device_info = self.device_scanner.scan(self.config.device_id)
         logger.info(
-            f"Device scanned: {self.device_info.platform} {self.device_info.os}"
+            f"Device scanned: {self.device_info.platform} {self.device_info.os}",
         )
 
         # Check companion server health
@@ -72,7 +72,7 @@ class AgentDaemon:
                 await asyncio.sleep(5)  # Wait before retrying
 
     async def process_request(
-        self, user_prompt: str, context: dict | None = None
+        self, user_prompt: str, context: dict | None = None,
     ) -> bool:
         """Process a user request."""
         try:
