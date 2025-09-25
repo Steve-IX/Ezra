@@ -34,11 +34,11 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     
+    - name: Install pnpm
+      run: npm install -g pnpm
+    
     - name: Install dependencies
       run: |
-        # Install pnpm
-        npm install -g pnpm
-        
         # Install workspace dependencies
         pnpm install
         
@@ -103,9 +103,11 @@ jobs:
       with:
         go-version: '1.22'
     
+    - name: Install pnpm
+      run: npm install -g pnpm
+    
     - name: Install dependencies
       run: |
-        npm install -g pnpm
         pnpm install
         cd agent && pip install -e .
         cd ../executor && pip install -e .
