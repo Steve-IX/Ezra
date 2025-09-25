@@ -48,7 +48,10 @@ class ActionExecutor:
                 results.append(result)
 
                 # If action failed and is critical, stop execution
-                if result.status == "failed" and action.get("risk_level") == "critical":
+                if (
+                    result.status == "failed"
+                    and action.get("risk_level") == "critical"
+                ):
                     logger.error(
                         f"Critical action failed, stopping execution: {action.get('id')}",
                     )
@@ -187,5 +190,9 @@ class ActionExecutor:
             "architecture": platform.machine(),
             "cpu_count": psutil.cpu_count(),
             "memory_total": psutil.virtual_memory().total,
-            "disk_usage": psutil.disk_usage("/")._asdict() if platform.system() != "Windows" else psutil.disk_usage("C:\\")._asdict(),
+            "disk_usage": (
+                psutil.disk_usage("/")._asdict()
+                if platform.system() != "Windows"
+                else psutil.disk_usage("C:\\")._asdict()
+            ),
         }

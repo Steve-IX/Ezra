@@ -116,7 +116,6 @@ class AgentDaemon:
                     logger.info(f"Action {result.action_id} completed successfully")
                 else:
                     logger.error(f"Action {result.action_id} failed: {result.error}")
-
             return True
 
         except (ValueError, RuntimeError, ConnectionError) as e:

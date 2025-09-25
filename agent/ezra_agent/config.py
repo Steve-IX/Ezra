@@ -13,13 +13,19 @@ class AgentConfig(BaseModel):
 
     companion_url: str = Field(..., description="Companion server URL")
     device_id: str = Field(..., description="Unique device identifier")
-    polling_interval: int = Field(default=5000, description="Polling interval in milliseconds")
+    polling_interval: int = Field(
+        default=5000, description="Polling interval in milliseconds",
+    )
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     timeout: int = Field(default=30000, description="Request timeout in milliseconds")
     log_level: str = Field(default="info", description="Logging level")
     data_dir: Path = Field(default=Path.home() / ".ezra", description="Data directory")
-    cache_dir: Path = Field(default=Path.home() / ".ezra" / "cache", description="Cache directory")
-    backup_dir: Path = Field(default=Path.home() / ".ezra" / "backups", description="Backup directory")
+    cache_dir: Path = Field(
+        default=Path.home() / ".ezra" / "cache", description="Cache directory",
+    )
+    backup_dir: Path = Field(
+        default=Path.home() / ".ezra" / "backups", description="Backup directory",
+    )
 
 
 class ConfigManager:
@@ -48,7 +54,8 @@ class ConfigManager:
                     config_data = json.load(f)
                 self._config = AgentConfig(**config_data)
             except (json.JSONDecodeError, ValueError) as e:
-                raise ValueError(f"Invalid configuration file: {e}")
+                msg = f"Invalid configuration file: {e}"
+                raise ValueError(msg) from e
         else:
             # Create default configuration
             self._config = self._create_default_config()
@@ -59,7 +66,8 @@ class ConfigManager:
     def save(self) -> None:
         """Save configuration to file."""
         if self._config is None:
-            raise ValueError("No configuration loaded")
+            msg = "No configuration loaded"
+            raise ValueError(msg)
 
         # Ensure directory exists
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
