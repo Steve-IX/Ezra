@@ -141,7 +141,7 @@ Respond with a JSON array of actions, each with:
       const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const actions = JSON.parse(jsonMatch[0]);
-        return actions.map((action: any, index: number) => ({
+        return actions.map((action: Record<string, any>, index: number) => ({
           id: action.id || `action_${index}`,
           type: action.type,
           description: action.description,

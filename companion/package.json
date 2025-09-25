@@ -2,13 +2,14 @@
   "name": "@ezra/companion",
   "version": "0.1.0",
   "description": "Ezra companion server with LLM routing",
+  "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {

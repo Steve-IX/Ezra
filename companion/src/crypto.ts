@@ -22,7 +22,7 @@ export class CryptoService {
     return util.encodeBase64(this.keyPair.secretKey);
   }
 
-  sign(data: any): Signature {
+  sign(data: unknown): Signature {
     const dataString = JSON.stringify(data);
     const dataBytes = util.decodeUTF8(dataString);
     const signature = nacl.sign.detached(dataBytes, this.keyPair.secretKey);
@@ -35,7 +35,7 @@ export class CryptoService {
     };
   }
 
-  verify(data: any, signature: Signature): boolean {
+  verify(data: unknown, signature: Signature): boolean {
     try {
       const dataString = JSON.stringify(data);
       const dataBytes = util.decodeUTF8(dataString);
