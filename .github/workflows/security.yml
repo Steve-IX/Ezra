@@ -50,9 +50,9 @@ jobs:
       run: |
         cd agent
         pip install pip-audit
-        pip-audit
+        pip-audit --local
         cd ../executor
-        pip-audit
+        pip-audit --local
     
     - name: Run go mod audit
       run: |
@@ -68,7 +68,7 @@ jobs:
         exit-code: '1'
     
     - name: Run CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         languages: javascript,python,go
 
@@ -170,7 +170,7 @@ jobs:
         output: 'agent-trivy-results.sarif'
     
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: |
           companion-trivy-results.sarif
