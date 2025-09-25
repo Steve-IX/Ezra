@@ -32,7 +32,9 @@ class AgentDaemon:
 
         # Scan device information
         self.device_info = self.device_scanner.scan(self.config.device_id)
-        logger.info(f"Device scanned: {self.device_info.platform} {self.device_info.os}")
+        logger.info(
+            f"Device scanned: {self.device_info.platform} {self.device_info.os}"
+        )
 
         # Check companion server health
         if not self.companion_client.health_check():
@@ -65,11 +67,13 @@ class AgentDaemon:
             except KeyboardInterrupt:
                 logger.info("Received interrupt signal")
                 break
-            except Exception as e:
+            except (ValueError, RuntimeError, ConnectionError) as e:
                 logger.error(f"Error in main loop: {e}")
                 await asyncio.sleep(5)  # Wait before retrying
 
-    async def process_request(self, user_prompt: str, context: dict | None = None) -> bool:
+    async def process_request(
+        self, user_prompt: str, context: dict | None = None
+    ) -> bool:
         """Process a user request."""
         try:
             # Create agent request
@@ -115,7 +119,7 @@ class AgentDaemon:
 
             return True
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ConnectionError) as e:
             logger.error(f"Error processing request: {e}")
             return False
 
@@ -126,7 +130,9 @@ app = typer.Typer(help="Ezra Agent - Universal system agent daemon")
 
 @app.command()
 def start(
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
     daemon: bool = typer.Option(False, "--daemon", "-d", help="Run as daemon"),
 ):
     """Start the agent daemon."""
@@ -139,7 +145,12 @@ def start(
     logger.add(
         sys.stderr,
         level=config.log_level.upper(),
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format=(
+            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+            "<level>{message}</level>"
+        ),
     )
 
     if daemon:
@@ -168,7 +179,7 @@ def start(
         asyncio.run(daemon.start())
     except KeyboardInterrupt:
         logger.info("Agent stopped by user")
-    except Exception as e:
+    except (ValueError, RuntimeError, ConnectionError) as e:
         logger.error(f"Agent failed: {e}")
         sys.exit(1)
 
@@ -176,7 +187,9 @@ def start(
 @app.command()
 def request(
     prompt: str = typer.Argument(..., help="User request prompt"),
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Process a single request."""
     # Load configuration
@@ -188,7 +201,12 @@ def request(
     logger.add(
         sys.stderr,
         level=config.log_level.upper(),
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format=(
+            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+            "<level>{message}</level>"
+        ),
     )
 
     # Create daemon and process request
@@ -207,14 +225,16 @@ def request(
         else:
             logger.error("Request processing failed")
             sys.exit(1)
-    except Exception as e:
+    except (ValueError, RuntimeError, ConnectionError) as e:
         logger.error(f"Request failed: {e}")
         sys.exit(1)
 
 
 @app.command()
 def status(
-    config_file: Path | None = typer.Option(None, "--config", "-c", help="Configuration file path"),
+    config_file: Path | None = typer.Option(
+        None, "--config", "-c", help="Configuration file path",
+    ),
 ):
     """Check agent status."""
     # Load configuration
@@ -240,7 +260,9 @@ def status(
     # Get device info
     scanner = DeviceScanner()
     device_info = scanner.scan(config.device_id)
-    typer.echo(f"\n🖥️  Device: {device_info.platform} {device_info.os} {device_info.version}")
+    typer.echo(
+        f"\n🖥️  Device: {device_info.platform} {device_info.os} {device_info.version}",
+    )
     typer.echo(f"🏗️  Architecture: {device_info.architecture}")
     typer.echo(f"💾 Memory: {device_info.hardware.memory // (1024**3)} GB")
     typer.echo(f"💿 Storage: {device_info.hardware.storage // (1024**3)} GB")

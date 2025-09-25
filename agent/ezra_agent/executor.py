@@ -11,6 +11,10 @@ from pydantic import BaseModel, Field
 from .config import AgentConfig
 
 
+class CommandExecutionError(Exception):
+    """Custom exception for command execution errors."""
+
+
 class ExecutionResult(BaseModel):
     """Execution result model."""
 
@@ -45,11 +49,13 @@ class ActionExecutor:
 
                 # If action failed and is critical, stop execution
                 if result.status == "failed" and action.get("risk_level") == "critical":
-                    logger.error(f"Critical action failed, stopping execution: {action.get('id')}")
+                    logger.error(
+                        f"Critical action failed, stopping execution: {action.get('id')}"
+                    )
                     break
 
-            except Exception as e:
-                logger.error(f"Unexpected error executing action {action.get('id')}: {e}")
+            except (CommandExecutionError, ValueError, RuntimeError) as e:
+                logger.error(f"Error executing action {action.get('id')}: {e}")
                 results.append(ExecutionResult(
                     action_id=action.get("id", "unknown"),
                     status="failed",
@@ -94,7 +100,7 @@ class ActionExecutor:
                 timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             )
 
-        except Exception as e:
+        except (CommandExecutionError, ValueError, RuntimeError) as e:
             duration = time.time() - start_time
             logger.error(f"Action {action_id} failed: {e}")
 
@@ -131,11 +137,12 @@ class ActionExecutor:
 
             return output
 
-        except subprocess.TimeoutExpired:
-            raise Exception(f"Command timed out: {command}")
+        except subprocess.TimeoutExpired as e:
+            msg = f"Command timed out: {command}"
+            raise CommandExecutionError(msg) from e
         except subprocess.CalledProcessError as e:
             msg = f"Command failed with code {e.returncode}: {e.stderr}"
-            raise Exception(msg)
+            raise CommandExecutionError(msg) from e
 
     def _create_backup(self, action_id: str) -> None:
         """Create backup before high-risk operations."""
@@ -166,7 +173,7 @@ class ActionExecutor:
         for command in rollback_commands:
             try:
                 self._execute_command(command)
-            except Exception as e:
+            except (CommandExecutionError, ValueError, RuntimeError) as e:
                 logger.error(f"Rollback command failed: {command} - {e}")
 
     def _get_system_info(self) -> dict[str, Any]:
