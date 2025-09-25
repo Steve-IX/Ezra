@@ -8,7 +8,8 @@ import {
   AgentResponseSchema, 
   DeviceInfoSchema,
   CompanionConfigSchema,
-  AgentRequest
+  AgentRequest,
+  Signature
 } from '@ezra/schemas';
 import { AgentService } from './agent';
 import { LLMRouter } from './llm';
@@ -127,7 +128,7 @@ export class CompanionServer {
     }, async (request, reply) => {
       try {
         const { action_plan, signature } = request.body as { action_plan: unknown; signature: unknown };
-        const isValid = this.cryptoService.verify(action_plan, signature);
+        const isValid = this.cryptoService.verify(action_plan, signature as Signature);
         
         return {
           valid: isValid,

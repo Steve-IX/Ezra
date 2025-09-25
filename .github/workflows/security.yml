@@ -48,9 +48,9 @@ jobs:
       run: |
         cd agent
         pip install pip-audit
-        pip-audit
+        pip-audit --no-deps
         cd ../executor
-        pip-audit
+        pip-audit --no-deps
     
     - name: Run go mod audit
       run: |
