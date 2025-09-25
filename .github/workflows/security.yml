@@ -29,6 +29,8 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
+        cache: true
+        cache-dependency-path: bootstrap/go.sum
     
     - name: Install pnpm
       run: npm install -g pnpm
@@ -48,9 +50,9 @@ jobs:
       run: |
         cd agent
         pip install pip-audit
-        pip-audit --no-deps
+        pip-audit
         cd ../executor
-        pip-audit --no-deps
+        pip-audit
     
     - name: Run go mod audit
       run: |
