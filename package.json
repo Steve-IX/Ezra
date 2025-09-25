@@ -1,0 +1,36 @@
+{
+  "name": "ezra",
+  "version": "0.1.0",
+  "description": "Universal system agent with device agent and companion server",
+  "private": true,
+  "workspaces": [
+    "companion",
+    "agent",
+    "executor",
+    "bootstrap",
+    "schemas",
+    "installers",
+    "docs"
+  ],
+  "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1 build",
+    "lint": "powershell -ExecutionPolicy Bypass -File build.ps1 lint", 
+    "test": "powershell -ExecutionPolicy Bypass -File build.ps1 test",
+    "clean": "powershell -ExecutionPolicy Bypass -File build.ps1 clean",
+    "deps": "powershell -ExecutionPolicy Bypass -File build.ps1 deps",
+    "help": "powershell -ExecutionPolicy Bypass -File build.ps1 help",
+    "build-ts": "pnpm -r build",
+    "test-ts": "pnpm -r test",
+    "lint-ts": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

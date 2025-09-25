@@ -1,0 +1,175 @@
+name: Security
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g pnpm
+        pnpm install
+        cd agent && pip install -e .
+        cd ../executor && pip install -e .
+    
+    - name: Run npm audit
+      run: |
+        cd companion
+        npm audit --audit-level=moderate
+    
+    - name: Run pip audit
+      run: |
+        cd agent
+        pip install pip-audit
+        pip-audit
+        cd ../executor
+        pip-audit
+    
+    - name: Run go mod audit
+      run: |
+        cd bootstrap
+        go list -json -deps ./... | nancy sleuth
+    
+    - name: Run Trivy filesystem scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'table'
+        exit-code: '1'
+    
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        languages: javascript, python, go
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Run TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  license-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g pnpm
+        pnpm install
+        cd agent && pip install -e .
+        cd ../executor && pip install -e .
+    
+    - name: Check Node.js licenses
+      run: |
+        cd companion
+        npx license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense'
+    
+    - name: Check Python licenses
+      run: |
+        cd agent
+        pip install pip-licenses
+        pip-licenses --format=json --output-file=licenses.json
+        # Check for problematic licenses
+        python -c "
+        import json
+        with open('licenses.json') as f:
+            licenses = json.load(f)
+        for pkg in licenses:
+            if pkg['License'] in ['GPL', 'AGPL', 'LGPL']:
+                print(f'Warning: {pkg[\"Name\"]} uses {pkg[\"License\"]} license')
+                exit(1)
+        "
+        cd ../executor
+        pip install pip-licenses
+        pip-licenses --format=json --output-file=licenses.json
+        python -c "
+        import json
+        with open('licenses.json') as f:
+            licenses = json.load(f)
+        for pkg in licenses:
+            if pkg['License'] in ['GPL', 'AGPL', 'LGPL']:
+                print(f'Warning: {pkg[\"Name\"]} uses {pkg[\"License\"]} license')
+                exit(1)
+        "
+
+  container-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Docker images
+      run: |
+        docker build -t ezra/companion:test ./companion
+        docker build -t ezra/agent:test ./agent
+    
+    - name: Scan companion image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ezra/companion:test'
+        format: 'sarif'
+        output: 'companion-trivy-results.sarif'
+    
+    - name: Scan agent image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ezra/agent:test'
+        format: 'sarif'
+        output: 'agent-trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: |
+          companion-trivy-results.sarif
+          agent-trivy-results.sarif

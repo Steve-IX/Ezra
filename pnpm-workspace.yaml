@@ -1,0 +1,8 @@
+packages:
+  - 'companion'
+  - 'agent'
+  - 'executor'
+  - 'bootstrap'
+  - 'schemas'
+  - 'installers'
+  - 'docs'

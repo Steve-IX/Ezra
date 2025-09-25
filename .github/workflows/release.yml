@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g pnpm
+        pnpm install
+        cd agent && pip install -e .
+        cd ../executor && pip install -e .
+    
+    - name: Build companion server
+      run: |
+        cd companion
+        pnpm build
+    
+    - name: Build agent
+      run: |
+        cd agent
+        python -m build
+    
+    - name: Build executor
+      run: |
+        cd executor
+        python -m build
+    
+    - name: Build bootstrap for all platforms
+      run: |
+        cd bootstrap
+        make build-all
+    
+    - name: Create release packages
+      run: |
+        mkdir -p release
+        
+        # Create companion packages
+        cd companion/dist
+        tar -czf ../../release/ezra-companion-linux-amd64.tar.gz .
+        cd ../..
+        
+        # Create agent packages
+        cd agent/dist
+        tar -czf ../../release/ezra-agent-linux-amd64.tar.gz .
+        cd ../..
+        
+        # Create executor packages
+        cd executor/dist
+        tar -czf ../../release/ezra-executor-linux-amd64.tar.gz .
+        cd ../..
+        
+        # Copy bootstrap binaries
+        cp bootstrap/dist/bin/* release/
+    
+    - name: Generate checksums
+      run: |
+        cd release
+        sha256sum * > checksums.txt
+    
+    - name: Sign artifacts
+      run: |
+        # This would use GPG or other signing mechanism
+        # For now, just create placeholder signatures
+        cd release
+        for file in *; do
+          echo "signature for $file" > "$file.sig"
+        done
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: release
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and push companion image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./companion
+        push: true
+        tags: |
+          ezra/companion:latest
+          ezra/companion:${{ github.ref_name }}
+        platforms: linux/amd64,linux/arm64
+    
+    - name: Build and push agent image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./agent
+        push: true
+        tags: |
+          ezra/agent:latest
+          ezra/agent:${{ github.ref_name }}
+        platforms: linux/amd64,linux/arm64
