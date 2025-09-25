@@ -35,8 +35,8 @@ jobs:
     - name: Install dependencies
       run: |
         pnpm install
-        cd agent && pip install -e .
-        cd ../executor && pip install -e .
+        cd agent && pip install -e .[dev]
+        cd ../executor && pip install -e .[dev]
     
     - name: Build companion server
       run: |
