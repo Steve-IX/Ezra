@@ -39,10 +39,10 @@ jobs:
         cd agent && pip install -e .
         cd ../executor && pip install -e .
     
-    - name: Run npm audit
+    - name: Run pnpm audit
       run: |
         cd companion
-        npm audit --audit-level=moderate
+        pnpm audit --audit-level=moderate
     
     - name: Run pip audit
       run: |

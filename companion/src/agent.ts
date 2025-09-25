@@ -188,8 +188,8 @@ Respond with a JSON array of actions, each with:
 
   private generateHumanSummary(plan: ActionPlan): string {
     const actionCount = plan.actions.length;
-    const riskLevels = plan.actions.map(a => a.risk_level);
-    const highRiskCount = riskLevels.filter(r => r === 'high' || r === 'critical').length;
+    const riskLevels = plan.actions.map((a: Action) => a.risk_level);
+    const highRiskCount = riskLevels.filter((r: string) => r === 'high' || r === 'critical').length;
     
     let summary = `This plan includes ${actionCount} action(s)`;
     
@@ -199,7 +199,7 @@ Respond with a JSON array of actions, each with:
     
     summary += `. The plan will:`;
     
-    plan.actions.forEach((action, index) => {
+    plan.actions.forEach((action: Action, index: number) => {
       summary += `\n${index + 1}. ${action.description} (${action.risk_level} risk)`;
     });
     

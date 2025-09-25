@@ -17,6 +17,9 @@ COPY companion/package.json ./companion/
 # Install dependencies
 RUN pnpm install
 
+# Build schemas first
+RUN cd schemas && pnpm run build
+
 # Copy companion source code
 COPY companion/ ./companion/
 
