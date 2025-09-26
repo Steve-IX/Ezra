@@ -27,7 +27,7 @@ export class AgentService {
     const summary = this.generateHumanSummary(actionPlan);
     
     // Determine if consent is required
-    const consentRequired = actionPlan.actions.some(action => 
+    const consentRequired = actionPlan.actions.some((action: Action) => 
       action.requires_consent || action.risk_level === 'high' || action.risk_level === 'critical'
     );
     

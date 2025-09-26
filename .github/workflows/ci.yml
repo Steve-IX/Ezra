@@ -123,6 +123,11 @@ jobs:
         cd agent && pip install -e .
         cd ../executor && pip install -e .
     
+    - name: Build schemas package
+      run: |
+        cd schemas
+        pnpm build
+    
     - name: Build companion server
       run: |
         cd companion

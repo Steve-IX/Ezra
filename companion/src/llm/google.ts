@@ -55,7 +55,7 @@ export class GoogleProvider {
       },
       metadata: {
         finish_reason: 'stop',
-        confidence: this.calculateConfidence(response),
+        confidence: this.calculateConfidence(),
       },
     };
   }
