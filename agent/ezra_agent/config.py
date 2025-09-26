@@ -1,7 +1,9 @@
 """Configuration management for Ezra agent."""
 
+import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +38,16 @@ class ConfigManager:
         self.config_path = config_path or self._get_default_config_path()
         self._config: AgentConfig | None = None
 
+    @property
+    def config(self) -> AgentConfig:
+        """Get current configuration."""
+        return self._config or self.load()
+
+    @config.setter
+    def config(self, value: AgentConfig) -> None:
+        """Set configuration."""
+        self._config = value
+
     def _get_default_config_path(self) -> Path:
         """Get default configuration file path."""
         if os.name == "nt":  # Windows
@@ -50,7 +62,7 @@ class ConfigManager:
 
         if self.config_path.exists():
             try:
-                with open(self.config_path, encoding="utf-8") as f:
+                with self.config_path.open(encoding="utf-8") as f:
                     config_data = json.load(f)
                 self._config = AgentConfig(**config_data)
             except (json.JSONDecodeError, ValueError) as e:
@@ -58,7 +70,7 @@ class ConfigManager:
                 raise ValueError(msg) from e
         else:
             # Create default configuration
-            self._config = self._create_default_config()
+            self._config = self.create_default_config()
             self.save()
 
         return self._config
@@ -72,10 +84,10 @@ class ConfigManager:
         # Ensure directory exists
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(self.config_path, "w", encoding="utf-8") as f:
+        with self.config_path.open("w", encoding="utf-8") as f:
             json.dump(self._config.dict(), f, indent=2, default=str)
 
-    def _create_default_config(self) -> AgentConfig:
+    def create_default_config(self) -> AgentConfig:
         """Create default configuration."""
         return AgentConfig(
             companion_url=os.environ.get("EZRA_COMPANION_URL", "http://localhost:3000"),
@@ -84,9 +96,6 @@ class ConfigManager:
 
     def _generate_device_id(self) -> str:
         """Generate unique device ID."""
-        import hashlib
-        import platform
-
         # Create a unique identifier based on system information
         system_info = {
             "platform": platform.platform(),

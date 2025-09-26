@@ -1,8 +1,8 @@
 """System adapters for different platforms."""
 
+from .android import AndroidAdapter
 from .base import BaseAdapter
 from .linux import LinuxAdapter
 from .windows import WindowsAdapter
-from .android import AndroidAdapter
 
-__all__ = ['BaseAdapter', 'LinuxAdapter', 'WindowsAdapter', 'AndroidAdapter']
+__all__ = ["AndroidAdapter", "BaseAdapter", "LinuxAdapter", "WindowsAdapter"]

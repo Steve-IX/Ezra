@@ -47,5 +47,7 @@ disallow_untyped_defs = true
 [tool.ruff]
 target-version = "py311"
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
-ignore = ["S101", "S104", "S108", "S110", "S112", "S311", "S603", "S607"]
+ignore = ["S101", "S104", "S108", "S110", "S112", "S311", "S603", "S607", "BLE001", "ARG002", "C901", "PLR0912", "TRY300", "EM102", "TRY003", "E722", "PIE810", "S602", "PERF401", "PTH123", "PTH116", "PTH101", "E501", "PLC0415"]

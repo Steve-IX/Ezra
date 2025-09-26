@@ -13,6 +13,11 @@ from .config import AgentConfig, ConfigManager
 from .device import DeviceScanner
 from .executor import ActionExecutor
 
+# Default options to avoid B008 errors
+_CONFIG_OPTION = typer.Option(
+    None, "--config", "-c", help="Configuration file path",
+)
+
 
 class AgentDaemon:
     """Main agent daemon class."""
@@ -118,8 +123,8 @@ class AgentDaemon:
                 else:
                     logger.error(f"Action {result.action_id} failed: {result.error}")
                     failed_actions.append(result.action_id)
-
-            return not failed_actions
+            else:
+                return not failed_actions
 
         except (ValueError, RuntimeError, ConnectionError) as e:
             logger.error(f"Error processing request: {e}")
@@ -132,9 +137,7 @@ app = typer.Typer(help="Ezra Agent - Universal system agent daemon")
 
 @app.command()
 def start(
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
     daemon: bool = typer.Option(False, "--daemon", "-d", help="Run as daemon"),
 ):
     """Start the agent daemon."""
@@ -169,9 +172,11 @@ def start(
     daemon = AgentDaemon(config)
 
     # Set up signal handlers
-    def signal_handler(signum, frame):
+    def signal_handler(signum, _frame):
         logger.info(f"Received signal {signum}")
-        asyncio.create_task(daemon.stop())
+        task = asyncio.create_task(daemon.stop())
+        # Store task reference to prevent garbage collection
+        signal_handler.task_ref = task
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -189,9 +194,7 @@ def start(
 @app.command()
 def request(
     prompt: str = typer.Argument(..., help="User request prompt"),
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
 ):
     """Process a single request."""
     # Load configuration
@@ -234,9 +237,7 @@ def request(
 
 @app.command()
 def status(
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
 ):
     """Check agent status."""
     # Load configuration

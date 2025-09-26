@@ -48,10 +48,11 @@ class CompanionClient:
         try:
             response = self.session.get(f"{self.base_url}/health")
             response.raise_for_status()
-            return True
         except requests.RequestException as e:
             logger.error(f"Health check failed: {e}")
             return False
+        else:
+            return True
 
     def generate_action_plan(self, request: AgentRequest) -> AgentResponse | None:
         """Generate action plan from companion server."""
@@ -73,7 +74,9 @@ class CompanionClient:
             logger.error(f"Invalid response from companion server: {e}")
             return None
 
-    def verify_signature(self, action_plan: dict[str, Any], signature: dict[str, Any]) -> bool:
+    def verify_signature(
+        self, action_plan: dict[str, Any], signature: dict[str, Any],
+    ) -> bool:
         """Verify action plan signature."""
         try:
             url = f"{self.base_url}/api/v1/agent/verify"

@@ -1,10 +1,13 @@
 """Action plan executor with system adapters."""
 
 import json
+import platform
+import shlex
 import subprocess
 import time
 from typing import Any
 
+import psutil
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -122,10 +125,12 @@ class ActionExecutor:
     def _execute_command(self, command: str) -> str:
         """Execute a single command."""
         try:
-            # Use shell=True for cross-platform compatibility
+            # Parse command into list for security
+            cmd_list = shlex.split(command) if isinstance(command, str) else command
+
             result = subprocess.run(
-                command,
-                check=False, shell=True,
+                cmd_list,
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
@@ -136,9 +141,9 @@ class ActionExecutor:
                 output += f"\nSTDERR: {result.stderr}"
 
             if result.returncode != 0:
-                raise subprocess.CalledProcessError(result.returncode, command, output)
-
-            return output
+                self._raise_command_error(result.returncode, command, output)
+            else:
+                return output
 
         except subprocess.TimeoutExpired as e:
             msg = f"Command timed out: {command}"
@@ -158,7 +163,7 @@ class ActionExecutor:
             "system_info": self._get_system_info(),
         }
 
-        with open(backup_path, "w") as f:
+        with backup_path.open("w") as f:
             json.dump(backup_data, f, indent=2)
 
         logger.info(f"Created backup: {backup_path}")
@@ -179,12 +184,12 @@ class ActionExecutor:
             except (CommandExecutionError, ValueError, RuntimeError) as e:
                 logger.error(f"Rollback command failed: {command} - {e}")
 
+    def _raise_command_error(self, returncode: int, command: str, output: str) -> None:
+        """Raise command execution error."""
+        raise subprocess.CalledProcessError(returncode, command, output)
+
     def _get_system_info(self) -> dict[str, Any]:
         """Get current system information for backup."""
-        import platform
-
-        import psutil
-
         return {
             "platform": platform.platform(),
             "architecture": platform.machine(),

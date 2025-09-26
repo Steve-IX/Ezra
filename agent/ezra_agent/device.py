@@ -1,7 +1,8 @@
 """Device information collection and management."""
 
 import platform
-from datetime import datetime
+import subprocess
+from datetime import UTC, datetime
 from typing import Any
 
 import psutil
@@ -26,7 +27,9 @@ class DeviceInfo(BaseModel):
     os: str = Field(..., description="Operating system")
     version: str = Field(..., description="OS version")
     hardware: HardwareInfo = Field(..., description="Hardware information")
-    capabilities: list[str] = Field(default_factory=list, description="Device capabilities")
+    capabilities: list[str] = Field(
+        default_factory=list, description="Device capabilities",
+    )
     timestamp: str = Field(..., description="Information collection timestamp")
 
 
@@ -61,7 +64,7 @@ class DeviceScanner:
             version=os_version,
             hardware=hardware,
             capabilities=capabilities,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
         )
 
     def _detect_platform(self) -> str:
@@ -109,9 +112,10 @@ class DeviceScanner:
         """Detect GPU information."""
         try:
             # Try to detect NVIDIA GPU
-            import subprocess
-            result = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                                  check=False, capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                check=False, capture_output=True, text=True, timeout=5,
+            )
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -119,11 +123,14 @@ class DeviceScanner:
 
         # Try to detect AMD GPU
         try:
-            result = subprocess.run(["lspci"], check=False, capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["lspci"], check=False, capture_output=True, text=True, timeout=5,
+            )
             if result.returncode == 0:
                 lines = result.stdout.split("\n")
                 for line in lines:
-                    if "vga" in line.lower() and ("amd" in line.lower() or "radeon" in line.lower()):
+                    if ("vga" in line.lower() and
+                        ("amd" in line.lower() or "radeon" in line.lower())):
                         return line.strip()
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
@@ -140,70 +147,120 @@ class DeviceScanner:
         # Platform-specific capabilities
         system = platform.system().lower()
         if system == "linux":
-            capabilities.extend([
-                "package_management",
-                "systemd",
-                "shell_access",
-                "root_access",
-            ])
-
-            # Check for specific tools
-            if self._has_command("apt"):
-                capabilities.append("apt_package_manager")
-            if self._has_command("yum"):
-                capabilities.append("yum_package_manager")
-            if self._has_command("dnf"):
-                capabilities.append("dnf_package_manager")
-            if self._has_command("pacman"):
-                capabilities.append("pacman_package_manager")
-
+            capabilities.extend(self._get_linux_capabilities())
         elif system == "windows":
-            capabilities.extend([
-                "powershell",
-                "registry_access",
-                "windows_services",
-            ])
+            capabilities.extend(self._get_windows_capabilities())
 
-            # Check for specific tools
-            if self._has_command("choco"):
-                capabilities.append("chocolatey_package_manager")
-            if self._has_command("winget"):
-                capabilities.append("winget_package_manager")
+        # Development and virtualization tools
+        capabilities.extend(self._get_development_capabilities())
+        capabilities.extend(self._get_virtualization_capabilities())
 
-        # Check for development tools
-        if self._has_command("git"):
-            capabilities.append("git")
-        if self._has_command("docker"):
-            capabilities.append("docker")
-        if self._has_command("python"):
-            capabilities.append("python")
-        if self._has_command("node"):
-            capabilities.append("nodejs")
+        return capabilities
 
-        # Check for virtualization
-        if self._has_command("kvm"):
-            capabilities.append("kvm_virtualization")
-        if self._has_command("virtualbox"):
-            capabilities.append("virtualbox")
+    def _get_linux_capabilities(self) -> list[str]:
+        """Get Linux-specific capabilities."""
+        capabilities = [
+            "package_management",
+            "systemd",
+            "shell_access",
+            "root_access",
+        ]
+
+        # Check for specific package managers
+        package_managers = {
+            "apt": "apt_package_manager",
+            "yum": "yum_package_manager",
+            "dnf": "dnf_package_manager",
+            "pacman": "pacman_package_manager",
+        }
+
+        for cmd, capability in package_managers.items():
+            if self._has_command(cmd):
+                capabilities.append(capability)
+
+        return capabilities
+
+    def _get_windows_capabilities(self) -> list[str]:
+        """Get Windows-specific capabilities."""
+        capabilities = [
+            "powershell",
+            "registry_access",
+            "windows_services",
+        ]
+
+        # Check for specific package managers
+        package_managers = {
+            "choco": "chocolatey_package_manager",
+            "winget": "winget_package_manager",
+        }
+
+        for cmd, capability in package_managers.items():
+            if self._has_command(cmd):
+                capabilities.append(capability)
+
+        return capabilities
+
+    def _get_development_capabilities(self) -> list[str]:
+        """Get development tool capabilities."""
+        capabilities = []
+
+        dev_tools = {
+            "git": "git",
+            "docker": "docker",
+            "python": "python",
+            "node": "nodejs",
+        }
+
+        for cmd, capability in dev_tools.items():
+            if self._has_command(cmd):
+                capabilities.append(capability)
+
+        return capabilities
+
+    def _get_virtualization_capabilities(self) -> list[str]:
+        """Get virtualization capabilities."""
+        capabilities = []
+
+        virt_tools = {
+            "kvm": "kvm_virtualization",
+            "virtualbox": "virtualbox",
+        }
+
+        for cmd, capability in virt_tools.items():
+            if self._has_command(cmd):
+                capabilities.append(capability)
 
         return capabilities
 
     def _has_command(self, command: str) -> bool:
         """Check if a command is available."""
         try:
-            import subprocess
-            result = subprocess.run(["which", command], check=False, capture_output=True, timeout=2)
-            return result.returncode == 0
+            result = subprocess.run(
+                ["which", command], check=False, capture_output=True, timeout=2,
+            )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
+        else:
+            return result.returncode == 0
 
     def get_system_status(self) -> dict[str, Any]:
         """Get current system status."""
         return {
             "cpu_percent": psutil.cpu_percent(interval=1),
             "memory_percent": psutil.virtual_memory().percent,
-            "disk_percent": psutil.disk_usage("/").percent if platform.system() != "Windows" else psutil.disk_usage("C:\\").percent,
-            "load_average": psutil.getloadavg() if hasattr(psutil, "getloadavg") else None,
-            "boot_time": datetime.fromtimestamp(psutil.boot_time()).isoformat(),
-            "uptime": datetime.now() - datetime.fromtimestamp(psutil.boot_time()),
+            "disk_percent": (
+                psutil.disk_usage("/").percent
+                if platform.system() != "Windows"
+                else psutil.disk_usage("C:\\").percent
+            ),
+            "load_average": (
+                psutil.getloadavg() if hasattr(psutil, "getloadavg") else None
+            ),
+            "boot_time": datetime.fromtimestamp(
+                psutil.boot_time(), tz=UTC,
+            ).isoformat(),
+            "uptime": (
+                datetime.now(UTC) -
+                datetime.fromtimestamp(psutil.boot_time(), tz=UTC)
+            ),
         }

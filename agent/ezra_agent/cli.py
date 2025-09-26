@@ -12,6 +12,11 @@ from .companion_client import CompanionClient
 from .config import ConfigManager
 from .device import DeviceScanner
 
+# Default options to avoid B008 errors
+_CONFIG_OPTION = typer.Option(
+    None, "--config", "-c", help="Configuration file path",
+)
+
 app = typer.Typer(help="Ezra Control CLI - Manage your Ezra agent")
 console = Console()
 
@@ -24,22 +29,20 @@ def init(
     device_id: str | None = typer.Option(
         None, "--device-id", help="Device identifier",
     ),
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
 ):
     """Initialize agent configuration."""
     config_manager = ConfigManager(config_file)
 
     # Create default config
-    config = config_manager._create_default_config()
+    config = config_manager.create_default_config()
     config.companion_url = companion_url
 
     if device_id:
         config.device_id = device_id
 
     # Save configuration
-    config_manager._config = config
+    config_manager.config = config
     config_manager.save()
 
     console.print(f"✅ Configuration initialized at {config_manager.config_path}")
@@ -49,9 +52,7 @@ def init(
 
 @app.command()
 def config(
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
 ):
     """Show current configuration."""
     config_manager = ConfigManager(config_file)
@@ -76,9 +77,7 @@ def config(
 
 @app.command()
 def scan(
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = _CONFIG_OPTION,
 ):
     """Scan device information."""
     config_manager = ConfigManager(config_file)
@@ -115,9 +114,7 @@ def scan(
 
 @app.command()
 def test(
-    config_file: Path | None = typer.Option(
-        None, "--config", "-c", help="Configuration file path",
-    ),
+    config_file: Path | None = None,
 ):
     """Test connection to companion server."""
     config_manager = ConfigManager(config_file)
