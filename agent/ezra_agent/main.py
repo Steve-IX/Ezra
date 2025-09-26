@@ -110,13 +110,16 @@ class AgentDaemon:
             # Execute action plan
             results = self.executor.execute_action_plan(response.action_plan)
 
-            # Log results
+            # Log results and check for failures
+            failed_actions = []
             for result in results:
                 if result.status == "completed":
                     logger.info(f"Action {result.action_id} completed successfully")
                 else:
                     logger.error(f"Action {result.action_id} failed: {result.error}")
-            return True
+                    failed_actions.append(result.action_id)
+
+            return not failed_actions
 
         except (ValueError, RuntimeError, ConnectionError) as e:
             logger.error(f"Error processing request: {e}")
