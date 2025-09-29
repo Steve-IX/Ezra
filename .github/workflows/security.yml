@@ -87,7 +87,7 @@ jobs:
     - name: Run go mod audit
       run: |
         cd bootstrap
-        go list -json -deps ./... | nancy sleuth
+        go list -json -deps ./... | nancy sleuth --username "${{ secrets.OSSINDEX_USERNAME }}" --token "${{ secrets.OSSINDEX_TOKEN }}"
     
     - name: Run Trivy filesystem scan
       uses: aquasecurity/trivy-action@master
