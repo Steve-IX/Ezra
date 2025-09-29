@@ -59,7 +59,8 @@ jobs:
     
     - name: Install nancy
       run: |
-        curl -sL https://github.com/sonatype-nexus-community/nancy/releases/latest/download/nancy-linux-amd64 -o /usr/local/bin/nancy
+        LATEST=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4)
+        curl -sL "$LATEST" -o /usr/local/bin/nancy
         chmod +x /usr/local/bin/nancy
     
     - name: Run go mod audit
