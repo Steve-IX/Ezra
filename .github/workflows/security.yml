@@ -60,31 +60,27 @@ jobs:
     - name: Install nancy
       run: |
         set -e
-        echo "Fetching latest nancy release..."
-        # Try to get the latest release info
-        RELEASE_INFO=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest)
-        echo "Release info: $RELEASE_INFO"
+        echo "Installing nancy..."
         
-        # Extract download URL
-        LATEST=$(echo "$RELEASE_INFO" | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4)
-        echo "Download URL: $LATEST"
+        # Get the latest release tag
+        RELEASE_TAG=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest | grep '"tag_name"' | cut -d '"' -f 4)
+        echo "Latest release: $RELEASE_TAG"
         
-        if [ -z "$LATEST" ]; then
-          echo "Failed to get download URL from API, trying direct download..."
-          curl -sL https://github.com/sonatype-nexus-community/nancy/releases/latest/download/nancy-linux-amd64 -o /usr/local/bin/nancy
-        else
-          curl -sL "$LATEST" -o /usr/local/bin/nancy
-        fi
+        # Construct the download URL
+        NANCY_URL="https://github.com/sonatype-nexus-community/nancy/releases/download/${RELEASE_TAG}/nancy-${RELEASE_TAG}-linux-amd64"
+        echo "Download URL: $NANCY_URL"
         
-        # Verify the download
+        # Download and install
+        curl -sL "$NANCY_URL" -o /usr/local/bin/nancy
+        chmod +x /usr/local/bin/nancy
+        
+        # Verify installation
         if [ ! -f /usr/local/bin/nancy ]; then
-          echo "Download failed, trying alternative approach..."
-          # Try installing via go install as fallback
+          echo "Download failed, trying go install fallback..."
           go install github.com/sonatype-nexus-community/nancy@latest
           cp $(go env GOPATH)/bin/nancy /usr/local/bin/nancy
         fi
         
-        chmod +x /usr/local/bin/nancy
         echo "Nancy installed successfully"
         /usr/local/bin/nancy --version
     
