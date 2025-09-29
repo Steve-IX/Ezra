@@ -59,9 +59,34 @@ jobs:
     
     - name: Install nancy
       run: |
-        LATEST=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4)
-        curl -sL "$LATEST" -o /usr/local/bin/nancy
+        set -e
+        echo "Fetching latest nancy release..."
+        # Try to get the latest release info
+        RELEASE_INFO=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest)
+        echo "Release info: $RELEASE_INFO"
+        
+        # Extract download URL
+        LATEST=$(echo "$RELEASE_INFO" | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4)
+        echo "Download URL: $LATEST"
+        
+        if [ -z "$LATEST" ]; then
+          echo "Failed to get download URL from API, trying direct download..."
+          curl -sL https://github.com/sonatype-nexus-community/nancy/releases/latest/download/nancy-linux-amd64 -o /usr/local/bin/nancy
+        else
+          curl -sL "$LATEST" -o /usr/local/bin/nancy
+        fi
+        
+        # Verify the download
+        if [ ! -f /usr/local/bin/nancy ]; then
+          echo "Download failed, trying alternative approach..."
+          # Try installing via go install as fallback
+          go install github.com/sonatype-nexus-community/nancy@latest
+          cp $(go env GOPATH)/bin/nancy /usr/local/bin/nancy
+        fi
+        
         chmod +x /usr/local/bin/nancy
+        echo "Nancy installed successfully"
+        /usr/local/bin/nancy --version
     
     - name: Run go mod audit
       run: |
