@@ -14,7 +14,7 @@ COPY agent/pyproject.toml ./
 RUN pip install --no-cache-dir -e .
 
 # Copy source code
-COPY agent/ .
+COPY agent/ ./
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash ezra
