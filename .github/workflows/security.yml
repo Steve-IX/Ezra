@@ -87,7 +87,16 @@ jobs:
     - name: Run go mod audit
       run: |
         cd bootstrap
-        go list -json -deps ./... | nancy sleuth --username "${{ secrets.OSSINDEX_USERNAME }}" --token "${{ secrets.OSSINDEX_TOKEN }}"
+        if [ -n "${{ secrets.OSSINDEX_USERNAME }}" ] && [ -n "${{ secrets.OSSINDEX_TOKEN }}" ]; then
+          echo "Running nancy audit with OSS Index credentials..."
+          go list -json -deps ./... | nancy sleuth --username "${{ secrets.OSSINDEX_USERNAME }}" --token "${{ secrets.OSSINDEX_TOKEN }}"
+        else
+          echo "OSS Index credentials not available, skipping nancy audit"
+          echo "To enable Go dependency vulnerability scanning:"
+          echo "1. Create account at https://ossindex.sonatype.org/account/register"
+          echo "2. Add OSSINDEX_USERNAME and OSSINDEX_TOKEN secrets to this repository"
+          echo "3. Re-run this workflow"
+        fi
     
     - name: Run Trivy filesystem scan
       uses: aquasecurity/trivy-action@master
