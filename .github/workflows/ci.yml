@@ -85,6 +85,7 @@ jobs:
       run: |
         cd bootstrap
         go mod download
+        go build ./...
         golangci-lint run
 
   build:
