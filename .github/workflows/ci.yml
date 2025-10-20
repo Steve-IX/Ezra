@@ -84,6 +84,7 @@ jobs:
     - name: Lint Go
       run: |
         cd bootstrap
+        go mod download
         golangci-lint run
 
   build:
