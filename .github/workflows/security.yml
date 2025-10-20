@@ -78,8 +78,15 @@ jobs:
         set -e
         echo "Installing nancy..."
         
-        # Get the latest release tag
-        RELEASE_TAG=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest | grep '"tag_name"' | cut -d '"' -f 4)
+        # Get the latest release tag with fallback
+        RELEASE_TAG=$(curl -s https://api.github.com/repos/sonatype-nexus-community/nancy/releases/latest | grep '"tag_name"' | cut -d '"' -f 4 || echo "")
+        
+        # Fallback to known version if API fails
+        if [ -z "$RELEASE_TAG" ]; then
+          echo "GitHub API failed, using fallback version v1.0.52"
+          RELEASE_TAG="v1.0.52"
+        fi
+        
         echo "Latest release: $RELEASE_TAG"
         
         # Construct the download URL
@@ -87,11 +94,10 @@ jobs:
         echo "Download URL: $NANCY_URL"
         
         # Download and install
-        curl -sL "$NANCY_URL" -o /usr/local/bin/nancy
-        chmod +x /usr/local/bin/nancy
-        
-        # Verify installation
-        if [ ! -f /usr/local/bin/nancy ]; then
+        if curl -sL "$NANCY_URL" -o /usr/local/bin/nancy && [ -s /usr/local/bin/nancy ]; then
+          chmod +x /usr/local/bin/nancy
+          echo "Nancy downloaded successfully"
+        else
           echo "Download failed, trying go install fallback..."
           go install github.com/sonatype-nexus-community/nancy@latest
           cp $(go env GOPATH)/bin/nancy /usr/local/bin/nancy
