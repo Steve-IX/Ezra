@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "setup": "tsx src/setup.ts",
     "clean": "rm -rf dist",
     "test": "jest --passWithNoTests",
     "lint": "eslint src/**/*.ts"
@@ -20,6 +21,7 @@
     "@fastify/swagger": "^8.12.0",
     "@fastify/swagger-ui": "^2.0.0",
     "@google/generative-ai": "^0.2.0",
+    "dotenv": "^16.3.0",
     "fastify": "^4.24.0",
     "openai": "^4.20.0",
     "pino": "^8.16.0",

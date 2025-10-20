@@ -141,9 +141,41 @@ python -m ezra_agent.main start
 
 ## 🔧 Configuration
 
-### Environment Setup
+### Quick Setup (Recommended)
 
-Ezra uses environment variables for sensitive configuration like API keys. **Never commit `.env` files to version control** - they are already in `.gitignore`.
+Ezra provides **interactive setup wizards** that guide you through configuration:
+
+#### Companion Server Setup
+
+```bash
+cd companion
+pnpm install
+pnpm setup
+```
+
+The wizard will:
+- Prompt for your API keys (with validation)
+- Configure provider preferences
+- Set up signing key paths
+- Create a secure `.env` file with proper permissions
+
+#### Device Agent Setup
+
+```bash
+cd agent
+pip install -e .
+ezractl setup
+```
+
+The wizard will:
+- Prompt for companion server URL (with connection test)
+- Configure policy verification paths
+- Set up device directories
+- Create a secure `.env` file with proper permissions
+
+### Manual Configuration
+
+If you prefer to configure manually, Ezra uses environment variables for sensitive configuration. **Never commit `.env` files to version control** - they are already in `.gitignore`.
 
 #### Companion Server Configuration
 
