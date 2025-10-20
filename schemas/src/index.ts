@@ -1,13 +1,12 @@
-// Export all schemas and types
-export * from './types';
-export * from './crypto';
-export * from './schemas';
+// Export crypto schemas explicitly to avoid conflicts
 
-// Re-export commonly used schemas for convenience (legacy)
+// Re-export legacy schemas (explicit to avoid conflicts)
 export {
   DeviceInfoSchema,
   ActionPlanSchema as LegacyActionPlanSchema,
+  ActionPlan as LegacyActionPlan,
   ActionSchema,
+  Action as LegacyAction,
   LLMRequestSchema,
   LLMResponseSchema,
   AgentRequestSchema,
@@ -24,11 +23,75 @@ export {
   CertificateSchema,
 } from './crypto';
 
-// Re-export new comprehensive schemas
+// Re-export new comprehensive schemas (these take precedence)
 export {
   ActionPlanSchema,
+  ActionPlan,
   DeviceManifestSchema,
+  DeviceManifest,
   AuditLogEntrySchema,
+  AuditLogEntry,
   StepSchema,
+  Step,
   RollbackStepSchema,
+  RollbackStep,
+  StepTypeSchema,
+  StepType,
+  ActionPlanMetadataSchema,
+  ActionPlanMetadata,
+  ArtifactSchema,
+  Artifact,
+  ChecksSchema,
+  Checks,
+  CheckConditionSchema,
+  CheckCondition,
+  TokenUsageSchema,
+  TokenUsage,
+  // Hardware and OS types
+  HardwareSchema,
+  Hardware,
+  CPUSchema,
+  CPU,
+  MemorySchema,
+  Memory,
+  GPUSchema,
+  GPU,
+  StorageSchema,
+  Storage,
+  OSSchema,
+  OS,
+  PlatformSchema,
+  Platform,
+  // Storage and Partition types
+  StorageDeviceTypeSchema,
+  StorageDeviceType,
+  StorageDeviceSchema,
+  StorageDevice,
+  PartitionSchema,
+  Partition,
+  BootSchema,
+  Boot,
+  BIOSSchema,
+  BIOS,
+  FirmwareSchema,
+  Firmware,
+  SELinuxStatusSchema,
+  SELinuxStatus,
+  PackageManagerSchema,
+  PackageManager,
+  PackageSchema,
+  Package,
+  FileInfoSchema,
+  FileInfo,
+  LogsSchema,
+  Logs,
+  // Audit log types
+  ActorSchema,
+  Actor,
+  AuditEventSchema,
+  AuditEvent,
+  AuditDetailsSchema,
+  AuditDetails,
+  AuditMetadataSchema,
+  AuditMetadata,
 } from './schemas';
