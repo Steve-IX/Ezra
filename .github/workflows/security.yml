@@ -48,6 +48,8 @@ jobs:
     
     - name: Update vulnerable packages
       run: |
+        # Update pip to fix known vulnerabilities
+        pip install --upgrade pip
         # Update setuptools to fix known vulnerabilities
         pip install --upgrade setuptools>=78.1.1
     
