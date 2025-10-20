@@ -85,11 +85,14 @@ jobs:
         /usr/local/bin/nancy --version
     
     - name: Run go mod audit
+      env:
+        OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
+        OSSINDEX_PASSWORD: ${{ secrets.OSSINDEX_TOKEN }}
       run: |
         cd bootstrap
-        if [ -n "${{ secrets.OSSINDEX_USERNAME }}" ] && [ -n "${{ secrets.OSSINDEX_TOKEN }}" ]; then
+        if [ -n "$OSSINDEX_USERNAME" ] && [ -n "$OSSINDEX_PASSWORD" ]; then
           echo "Running nancy audit with OSS Index credentials..."
-          go list -json -deps ./... | nancy sleuth --username "${{ secrets.OSSINDEX_USERNAME }}" --token "${{ secrets.OSSINDEX_TOKEN }}"
+          go list -json -deps ./... | nancy sleuth --username "$OSSINDEX_USERNAME" --token "$OSSINDEX_PASSWORD"
         else
           echo "OSS Index credentials not available, skipping nancy audit"
           echo "To enable Go dependency vulnerability scanning:"
