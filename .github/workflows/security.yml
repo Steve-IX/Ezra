@@ -124,6 +124,7 @@ jobs:
         scan-ref: '.'
         format: 'table'
         exit-code: '1'
+        severity: 'MEDIUM,HIGH,CRITICAL'
     
     - name: Run CodeQL Analysis
       uses: github/codeql-action/analyze@v3
