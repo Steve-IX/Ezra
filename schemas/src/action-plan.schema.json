@@ -1,0 +1,228 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ezra.dev/schemas/action-plan.json",
+  "title": "Ezra Action Plan",
+  "description": "A signed action plan containing steps to execute on a device",
+  "type": "object",
+  "required": ["plan_id", "device_manifest_hash", "generated_by", "intent", "created_at", "steps", "rollback", "metadata"],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this action plan"
+    },
+    "device_manifest_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the device manifest this plan was generated for"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "LLM model identifier that generated this plan (e.g., 'gpt-4', 'claude-3-opus')"
+    },
+    "intent": {
+      "type": "string",
+      "description": "Human-readable description of what this plan aims to accomplish"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this plan was created"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this plan expires"
+    },
+    "steps": {
+      "type": "array",
+      "description": "Sequential steps to execute",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Step"
+      }
+    },
+    "rollback": {
+      "type": "array",
+      "description": "Rollback steps in reverse order",
+      "items": {
+        "$ref": "#/definitions/RollbackStep"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about plan generation",
+      "required": ["llm_provider", "model", "confidence"],
+      "properties": {
+        "llm_provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "auto"]
+        },
+        "model": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score from 0 to 1"
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "LLM's reasoning for this plan"
+        },
+        "token_usage": {
+          "type": "object",
+          "properties": {
+            "prompt_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "completion_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519 detached signature of the plan (base64 encoded)"
+    }
+  },
+  "definitions": {
+    "Step": {
+      "type": "object",
+      "required": ["id", "type", "description", "command", "risk"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique step identifier within this plan"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["precheck", "ui", "fs", "install", "flash", "fetch", "custom"],
+          "description": "Type of operation this step performs"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this step does"
+        },
+        "command": {
+          "type": "object",
+          "description": "Type-specific command object",
+          "additionalProperties": true
+        },
+        "artifact": {
+          "type": "object",
+          "description": "Optional artifact to download or upload",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "destination": {
+              "type": "string"
+            }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "description": "Pre and post conditions",
+          "properties": {
+            "pre": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["condition", "description"],
+                "properties": {
+                  "condition": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "post": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["condition", "description"],
+                "properties": {
+                  "condition": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Risk level from 0 (safe) to 10 (critical)"
+        },
+        "requires_physical": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this step requires physical interaction (USB insertion, button press, etc.)"
+        },
+        "estimated_duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated duration in seconds"
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "IDs of steps that must complete before this one",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RollbackStep": {
+      "type": "object",
+      "required": ["step_id", "description", "command"],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "description": "ID of the forward step this rollback corresponds to"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the rollback action"
+        },
+        "command": {
+          "type": "object",
+          "description": "Rollback command object",
+          "additionalProperties": true
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional condition to check before rollback"
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,343 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ezra.dev/schemas/device-manifest.json",
+  "title": "Ezra Device Manifest",
+  "description": "Comprehensive snapshot of device hardware, firmware, OS, and configuration state",
+  "type": "object",
+  "required": ["manifest_id", "device_id", "captured_at", "hardware", "storage", "os", "manifest_hash"],
+  "properties": {
+    "manifest_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this manifest"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Persistent device identifier"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this manifest was captured"
+    },
+    "hardware": {
+      "type": "object",
+      "required": ["cpu", "memory"],
+      "properties": {
+        "cpu": {
+          "type": "object",
+          "required": ["model", "cores", "architecture"],
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "CPU model name"
+            },
+            "vendor": {
+              "type": "string"
+            },
+            "cores": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "threads": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "frequency_mhz": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "architecture": {
+              "type": "string",
+              "description": "CPU architecture (x86_64, arm64, etc.)"
+            }
+          }
+        },
+        "gpu": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string"
+            },
+            "vendor": {
+              "type": "string"
+            },
+            "vram_mb": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "driver_version": {
+              "type": "string"
+            }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "required": ["total_bytes"],
+          "properties": {
+            "total_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "available_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "swap_total_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "swap_used_bytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "chipset": {
+          "type": "string",
+          "description": "Motherboard/chipset information"
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "required": ["devices"],
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["device", "size_bytes"],
+            "properties": {
+              "device": {
+                "type": "string",
+                "description": "Device path (e.g., /dev/sda, C:)"
+              },
+              "model": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["hdd", "ssd", "nvme", "emmc", "sd", "usb", "unknown"]
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["device", "mount_point", "fstype", "size_bytes"],
+            "properties": {
+              "device": {
+                "type": "string"
+              },
+              "mount_point": {
+                "type": "string"
+              },
+              "fstype": {
+                "type": "string"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "used_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "uuid": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "boot": {
+      "type": "object",
+      "properties": {
+        "secure_boot_enabled": {
+          "type": "boolean"
+        },
+        "boot_loader": {
+          "type": "string",
+          "description": "Boot loader name (GRUB, systemd-boot, Windows Boot Manager, etc.)"
+        },
+        "boot_loader_version": {
+          "type": "string"
+        },
+        "boot_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of boot configuration"
+        },
+        "uefi_mode": {
+          "type": "boolean"
+        },
+        "tpm_present": {
+          "type": "boolean"
+        },
+        "tpm_version": {
+          "type": "string"
+        }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "properties": {
+        "bios": {
+          "type": "object",
+          "properties": {
+            "vendor": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "release_date": {
+              "type": "string"
+            }
+          }
+        },
+        "ec_version": {
+          "type": "string",
+          "description": "Embedded controller version"
+        },
+        "me_version": {
+          "type": "string",
+          "description": "Intel Management Engine version"
+        }
+      }
+    },
+    "os": {
+      "type": "object",
+      "required": ["platform", "distribution", "kernel", "architecture"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["linux", "windows", "android", "console", "unknown"]
+        },
+        "distribution": {
+          "type": "string",
+          "description": "OS distribution (Ubuntu, Debian, Windows 11, etc.)"
+        },
+        "version": {
+          "type": "string"
+        },
+        "kernel": {
+          "type": "string",
+          "description": "Kernel version"
+        },
+        "architecture": {
+          "type": "string",
+          "description": "OS architecture (x86_64, arm64, etc.)"
+        },
+        "init_system": {
+          "type": "string",
+          "description": "Init system (systemd, init, etc.)"
+        },
+        "selinux_status": {
+          "type": "string",
+          "enum": ["enforcing", "permissive", "disabled", "not_present"]
+        },
+        "apparmor_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "manager"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "manager": {
+            "type": "string",
+            "enum": ["apt", "yum", "dnf", "pacman", "zypper", "apk", "choco", "winget", "pip", "npm", "cargo", "unknown"]
+          },
+          "architecture": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "description": "Critical system files with integrity hashes",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "permissions": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "logs": {
+      "type": "object",
+      "description": "Recent log tails for diagnostic purposes",
+      "properties": {
+        "dmesg": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "syslog": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "journal": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Device capabilities and features",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manifest_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of this entire manifest (excluding this field)"
+    }
+  }
+}
+

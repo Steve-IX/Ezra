@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ezra.dev/schemas/audit-log.json",
+  "title": "Ezra Audit Log Entry",
+  "description": "Append-only audit log entry for tracking all operations",
+  "type": "object",
+  "required": ["entry_id", "timestamp", "actor", "event"],
+  "properties": {
+    "entry_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this log entry"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp with microsecond precision"
+    },
+    "actor": {
+      "type": "string",
+      "enum": ["agent", "executor", "user", "companion", "system"],
+      "description": "Entity that performed the action"
+    },
+    "plan_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Action plan ID this entry relates to"
+    },
+    "step_id": {
+      "type": "string",
+      "description": "Step ID within the plan (if applicable)"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "approved",
+        "rejected",
+        "started",
+        "executing",
+        "executed",
+        "completed",
+        "rollback_started",
+        "rollback_completed",
+        "error",
+        "cancelled",
+        "timeout"
+      ],
+      "description": "Type of event that occurred"
+    },
+    "details": {
+      "type": "object",
+      "description": "Event-specific details",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command that was executed"
+        },
+        "output": {
+          "type": "string",
+          "description": "Command output or result"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if applicable"
+        },
+        "exit_code": {
+          "type": "integer",
+          "description": "Process exit code"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Duration in milliseconds"
+        },
+        "risk_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "backup_id": {
+          "type": "string",
+          "description": "Backup identifier if a backup was created"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "User who approved or initiated action"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for rejection, cancellation, or error"
+        }
+      },
+      "additionalProperties": true
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Device identifier where event occurred"
+    },
+    "device_manifest_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Hash of device manifest at time of event"
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 checksum linking to previous log entry for tamper detection"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "ip_address": {
+          "type": "string"
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "companion_version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
+

@@ -1,11 +1,12 @@
 // Export all schemas and types
 export * from './types';
 export * from './crypto';
+export * from './schemas';
 
-// Re-export commonly used schemas for convenience
+// Re-export commonly used schemas for convenience (legacy)
 export {
   DeviceInfoSchema,
-  ActionPlanSchema,
+  ActionPlanSchema as LegacyActionPlanSchema,
   ActionSchema,
   LLMRequestSchema,
   LLMResponseSchema,
@@ -22,3 +23,12 @@ export {
   KeyPairSchema,
   CertificateSchema,
 } from './crypto';
+
+// Re-export new comprehensive schemas
+export {
+  ActionPlanSchema,
+  DeviceManifestSchema,
+  AuditLogEntrySchema,
+  StepSchema,
+  RollbackStepSchema,
+} from './schemas';
