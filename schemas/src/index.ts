@@ -3,24 +3,40 @@
 // Re-export legacy schemas (explicit to avoid conflicts)
 export {
   DeviceInfoSchema,
+  DeviceInfo,
   ActionPlanSchema as LegacyActionPlanSchema,
   ActionPlan as LegacyActionPlan,
   ActionSchema,
-  Action as LegacyAction,
+  Action,
+  LLMProviderSchema,
+  LLMProvider,
   LLMRequestSchema,
+  LLMRequest,
   LLMResponseSchema,
+  LLMResponse,
   AgentRequestSchema,
+  AgentRequest,
   AgentResponseSchema,
+  AgentResponse,
+  ExecutionStatusSchema,
+  ExecutionStatus,
   ExecutionResultSchema,
+  ExecutionResult,
   CompanionConfigSchema,
+  CompanionConfig,
   AgentConfigSchema,
+  AgentConfig,
 } from './types';
 
 export {
   SignatureSchema,
+  Signature,
   SignedDataSchema,
+  SignedData,
   KeyPairSchema,
+  KeyPair,
   CertificateSchema,
+  Certificate,
 } from './crypto';
 
 // Re-export new comprehensive schemas (these take precedence)

@@ -1,7 +1,7 @@
 import { 
   AgentRequest, 
   AgentResponse, 
-  ActionPlan, 
+  LegacyActionPlan as ActionPlan, 
   Action, 
   DeviceInfo,
   LLMRequest,
