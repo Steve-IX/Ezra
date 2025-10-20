@@ -6,7 +6,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from .companion_client import CompanionClient
@@ -22,133 +22,96 @@ app = typer.Typer(help="Ezra Control CLI - Manage your Ezra agent")
 console = Console()
 
 
-@app.command()
-def setup():
-    """Interactive setup wizard for Ezra agent."""
-    console.print(Panel.fit(
-        "[bold cyan]Ezra Device Agent - Setup Wizard[/bold cyan]",
-        border_style="cyan",
-    ))
-    console.print()
-    console.print("This wizard will help you configure the Ezra Device Agent.")
-    console.print("You will need the URL of your companion server.\n")
-
-    # Get agent directory
-    agent_dir = Path.home() / ".ezra"
-    env_path = agent_dir / ".env"
-
-    # Check if .env already exists
-    if env_path.exists():
-        if not Confirm.ask(
-            f"\n⚠️  Configuration already exists at {env_path}. Overwrite?",
-            default=False,
-        ):
-            console.print("\n[yellow]Setup cancelled.[/yellow]")
-            return
-
-    # Companion Server URL
+def _print_section(title: str) -> None:
+    """Print a section header."""
+    console.print("\n[bold]─" * 60 + "[/bold]")
+    console.print(f"[bold cyan]{title}[/bold cyan]")
     console.print("[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Companion Server Configuration[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
-    console.print("\nExamples:")
-    console.print("  • Local development: http://localhost:3000")
-    console.print("  • Production: https://companion.example.com:8443")
-    console.print("  • Self-hosted: https://192.168.1.100:8443\n")
 
-    companion_url = Prompt.ask(
-        "Companion server URL",
-        default="http://localhost:3000",
-    )
 
-    # Test connection
+def _test_companion_connection(companion_url: str) -> bool:
+    """Test connection to companion server. Returns True if successful."""
     console.print(f"\n🔍 Testing connection to {companion_url}...")
-    
-    # Create temporary config to test
+
     class TempConfig:
         companion_url = companion_url
         timeout = 10000
         max_retries = 3
 
     try:
-        client = CompanionClient(TempConfig())  # type: ignore
+        client = CompanionClient(TempConfig())  # type: ignore[arg-type]
         if client.health_check():
             console.print("[green]✅ Connection successful![/green]")
-        else:
-            console.print("[yellow]⚠️  Could not connect to companion server.[/yellow]")
-            if not Confirm.ask("Continue anyway?", default=False):
-                console.print("\n[yellow]Setup cancelled.[/yellow]")
-                return
-    except Exception as e:
+            return True
+        console.print(
+            "[yellow]⚠️  Could not connect to companion server.[/yellow]",
+        )
+        return Confirm.ask("Continue anyway?", default=False)
+    except (ConnectionError, TimeoutError, OSError) as e:
         console.print(f"[yellow]⚠️  Connection test failed: {e}[/yellow]")
-        if not Confirm.ask("Continue anyway?", default=False):
-            console.print("\n[yellow]Setup cancelled.[/yellow]")
-            return
+        return Confirm.ask("Continue anyway?", default=False)
 
-    # Policy Public Key
-    console.print("\n[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Policy Verification[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
+
+def _get_companion_config() -> str:
+    """Prompt for companion server configuration."""
+    _print_section("Companion Server Configuration")
+    console.print("\nExamples:")
+    console.print("  • Local development: http://localhost:3000")
+    console.print("  • Production: https://companion.example.com:8443")
+    console.print("  • Self-hosted: https://192.168.1.100:8443\n")
+    return Prompt.ask("Companion server URL", default="http://localhost:3000")
+
+
+def _get_policy_config() -> str:
+    """Prompt for policy verification configuration."""
+    _print_section("Policy Verification")
     console.print("\nPath to the Ed25519 public key for verifying action plans.")
     console.print("This should match the private key used by the companion server.\n")
+    return Prompt.ask("Public key path", default="/etc/ezra/policy_pub.key")
 
-    policy_pub_key_path = Prompt.ask(
-        "Public key path",
-        default="/etc/ezra/policy_pub.key",
-    )
 
-    # Device Enrollment Token
-    console.print("\n[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Device Enrollment (Optional)[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
+def _get_enrollment_config() -> str:
+    """Prompt for device enrollment configuration."""
+    _print_section("Device Enrollment (Optional)")
     console.print("\nLeave empty if not using enrollment tokens.\n")
+    return Prompt.ask("Enrollment token", default="")
 
-    enrollment_token = Prompt.ask(
-        "Enrollment token",
-        default="",
-    )
 
-    # Additional Configuration
-    console.print("\n[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Additional Configuration[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
+def _get_additional_config() -> dict:
+    """Prompt for additional configuration options."""
+    _print_section("Additional Configuration")
+    return {
+        "device_id": Prompt.ask("\nDevice ID", default="ezra_device_001"),
+        "data_dir": Prompt.ask(
+            "Data directory",
+            default=str(Path.home() / ".ezra" / "data"),
+        ),
+        "cache_dir": Prompt.ask(
+            "Cache directory",
+            default=str(Path.home() / ".ezra" / "cache"),
+        ),
+        "backup_dir": Prompt.ask(
+            "Backup directory",
+            default=str(Path.home() / ".ezra" / "backups"),
+        ),
+        "log_level": Prompt.ask(
+            "Log level",
+            choices=["debug", "info", "warning", "error"],
+            default="info",
+        ),
+    }
 
-    device_id = Prompt.ask(
-        "\nDevice ID",
-        default="ezra_device_001",
-    )
 
-    data_dir = Prompt.ask(
-        "Data directory",
-        default=str(Path.home() / ".ezra" / "data"),
-    )
-
-    cache_dir = Prompt.ask(
-        "Cache directory",
-        default=str(Path.home() / ".ezra" / "cache"),
-    )
-
-    backup_dir = Prompt.ask(
-        "Backup directory",
-        default=str(Path.home() / ".ezra" / "backups"),
-    )
-
-    log_level = Prompt.ask(
-        "Log level",
-        choices=["debug", "info", "warning", "error"],
-        default="info",
-    )
-
-    # Create .env file
-    console.print("\n[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Saving Configuration[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
-
-    # Ensure agent directory exists
-    agent_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create .env content
+def _create_env_file(
+    env_path: Path,
+    companion_url: str,
+    policy_pub_key_path: str,
+    enrollment_token: str,
+    config: dict,
+) -> None:
+    """Create the .env file with provided configuration."""
     env_content = f"""# Ezra Device Agent - Environment Configuration
-# Generated by setup wizard on {Path(__file__).name}
+# Generated by setup wizard
 # NEVER commit this file to version control!
 
 # ============================================================
@@ -169,11 +132,11 @@ DEVICE_ENROLLMENT_TOKEN={enrollment_token}
 # ============================================================
 # Device Configuration
 # ============================================================
-DEVICE_ID={device_id}
-DATA_DIR={data_dir}
-CACHE_DIR={cache_dir}
-BACKUP_DIR={backup_dir}
-LOG_LEVEL={log_level}
+DEVICE_ID={config['device_id']}
+DATA_DIR={config['data_dir']}
+CACHE_DIR={config['cache_dir']}
+BACKUP_DIR={config['backup_dir']}
+LOG_LEVEL={config['log_level']}
 
 # ============================================================
 # Security Settings
@@ -182,25 +145,13 @@ VERIFY_SSL=true
 REQUEST_TIMEOUT=30
 MAX_RETRIES=3
 """
-
-    # Write .env file
     env_path.write_text(env_content)
     env_path.chmod(0o600)
 
-    console.print(f"\n[green]✅ Configuration saved to: {env_path}[/green]")
-    console.print("[green]🔒 File permissions set to 600 (owner read/write only)[/green]")
 
-    # Create data directories
-    Path(data_dir).mkdir(parents=True, exist_ok=True)
-    Path(cache_dir).mkdir(parents=True, exist_ok=True)
-    Path(backup_dir).mkdir(parents=True, exist_ok=True)
-
-    console.print(f"\n[green]✅ Created data directories[/green]")
-
-    # Next steps
-    console.print("\n[bold]─" * 60 + "[/bold]")
-    console.print("[bold cyan]Next Steps[/bold cyan]")
-    console.print("[bold]─" * 60 + "[/bold]")
+def _print_next_steps(policy_pub_key_path: str) -> None:
+    """Print next steps after setup completion."""
+    _print_section("Next Steps")
     console.print("\n1. Ensure you have the public key file:")
     console.print(f"   {policy_pub_key_path}")
     console.print("\n2. Test the connection:")
@@ -211,6 +162,68 @@ MAX_RETRIES=3
     console.print("   ezra-agent start")
     console.print("\n5. Or install as system service:")
     console.print("   ezractl install --service\n")
+
+
+@app.command()
+def setup():
+    """Interactive setup wizard for Ezra agent."""
+    console.print(Panel.fit(
+        "[bold cyan]Ezra Device Agent - Setup Wizard[/bold cyan]",
+        border_style="cyan",
+    ))
+    console.print()
+    console.print("This wizard will help you configure the Ezra Device Agent.")
+    console.print("You will need the URL of your companion server.\n")
+
+    # Get agent directory
+    agent_dir = Path.home() / ".ezra"
+    env_path = agent_dir / ".env"
+
+    # Check if .env already exists
+    if env_path.exists() and not Confirm.ask(
+        f"\n⚠️  Configuration already exists at {env_path}. Overwrite?",
+        default=False,
+    ):
+        console.print("\n[yellow]Setup cancelled.[/yellow]")
+        return
+
+    # Gather configuration
+    companion_url = _get_companion_config()
+
+    if not _test_companion_connection(companion_url):
+        console.print("\n[yellow]Setup cancelled.[/yellow]")
+        return
+
+    policy_pub_key_path = _get_policy_config()
+    enrollment_token = _get_enrollment_config()
+    additional_config = _get_additional_config()
+
+    # Save configuration
+    _print_section("Saving Configuration")
+    agent_dir.mkdir(parents=True, exist_ok=True)
+
+    _create_env_file(
+        env_path,
+        companion_url,
+        policy_pub_key_path,
+        enrollment_token,
+        additional_config,
+    )
+
+    console.print(f"\n[green]✅ Configuration saved to: {env_path}[/green]")
+    console.print(
+        "[green]🔒 File permissions set to 600 (owner read/write only)[/green]",
+    )
+
+    # Create data directories
+    Path(additional_config["data_dir"]).mkdir(parents=True, exist_ok=True)
+    Path(additional_config["cache_dir"]).mkdir(parents=True, exist_ok=True)
+    Path(additional_config["backup_dir"]).mkdir(parents=True, exist_ok=True)
+
+    console.print("\n[green]✅ Created data directories[/green]")
+
+    # Print next steps
+    _print_next_steps(policy_pub_key_path)
 
 
 @app.command()
