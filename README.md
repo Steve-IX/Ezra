@@ -33,31 +33,52 @@ Ezra is a universal, Jarvis-style system agent that runs as a **thin device agen
 └─────────────────┘    └─────────────────┘
 ```
 
-## 📦 Components
+## 📦 Monorepo Structure
 
-### Companion Server (`companion/`)
+This is a **pnpm workspace** monorepo containing multiple interconnected packages:
+
+### `companion/` - Companion Server
 - **TypeScript + Fastify** server with OpenAPI docs
 - **Multi-provider LLM routing** with fallback and rate limiting
 - **Ed25519 signing** for action plans
 - **Zod validation** for all requests/responses
+- **Dependencies**: `@ezra/schemas`, Fastify, OpenAI SDK, Anthropic SDK, Google Generative AI
 
-### Device Agent (`agent/`)
-- **Python 3.11** daemon with systemd service
+### `agent/` - Device Agent
+- **Python 3.11+** daemon with systemd service
 - **Device scanning** and capability detection
 - **Action plan execution** with backup/rollback
 - **Rich CLI** with `ezractl` command
+- **Dependencies**: Typer, Requests, Pydantic, Cryptography
 
-### Executor Library (`executor/`)
+### `executor/` - Executor Library
 - **Python library** with system adapters
 - **Platform adapters** for Linux, Windows, Android
 - **Package management** (apt, yum, choco, winget, etc.)
 - **File operations** with permission handling
+- **Dependencies**: Pydantic, psutil
 
-### Bootstrap Installer (`bootstrap/`)
+### `schemas/` - Shared Types
+- **TypeScript type definitions** generated from JSON schemas
+- **Zod/TypeBox schemas** for validation
+- **Python stubs** via `datamodel-codegen` (planned)
+- **Shared across** companion and agent
+
+### `bootstrap/` - Bootstrap Installer
 - **Go static binary** for installation
 - **Online/offline** installation modes
-- **Cross-platform** detection and setup
+- **Cross-platform** detection and setup (linux/amd64, linux/arm64, windows/amd64)
 - **System service** configuration
+
+### `installers/` - Platform Installers
+- **Linux**: Bash installation script
+- **Windows**: PowerShell installation script
+- **USB/SD**: Offline installation manifests
+
+### `docs/` - Documentation
+- Project documentation (planned: MkDocs)
+- Architecture diagrams
+- API references
 
 ## 🚀 Quick Start
 
@@ -95,7 +116,18 @@ cd ezra
 # Install dependencies
 pnpm install
 
-# Build components
+# Configure companion server
+cd companion
+cp .env.example .env
+# Edit .env and add your API keys (see Configuration section)
+
+# Configure agent
+cd ../agent
+cp .env.example .env
+# Edit .env with companion URL and keys
+
+# Build all components
+cd ..
 pnpm build
 
 # Start companion server
@@ -109,49 +141,54 @@ python -m ezra_agent.main start
 
 ## 🔧 Configuration
 
-### Companion Server
+### Environment Setup
 
-Create `config.json`:
+Ezra uses environment variables for sensitive configuration like API keys. **Never commit `.env` files to version control** - they are already in `.gitignore`.
 
-```json
-{
-  "port": 3000,
-  "host": "0.0.0.0",
-  "llm_providers": {
-    "openai": {
-      "api_key": "your-openai-key",
-      "models": ["gpt-4", "gpt-3.5-turbo"]
-    },
-    "anthropic": {
-      "api_key": "your-anthropic-key",
-      "models": ["claude-3-opus", "claude-3-sonnet"]
-    },
-    "google": {
-      "api_key": "your-google-key",
-      "models": ["gemini-pro"]
-    }
-  },
-  "signing": {
-    "private_key": "your-ed25519-private-key",
-    "public_key": "your-ed25519-public-key"
-  }
-}
+#### Companion Server Configuration
+
+1. Copy the environment template:
+```bash
+cd companion
+cp .env.example .env
 ```
 
-### Device Agent
+2. Edit `.env` and add your actual API keys:
+   - **OpenAI API Key**: Get from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - **Anthropic API Key**: Get from [Anthropic Console](https://console.anthropic.com/settings/keys)
+   - **Google API Key**: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-Create `agent-config.json`:
+3. Generate Ed25519 signing keys:
+```bash
+# Generate private key
+openssl genpkey -algorithm ed25519 -out policy_priv.key
 
-```json
-{
-  "companion_url": "http://localhost:3000",
-  "device_id": "ezra_device_001",
-  "data_dir": "/var/lib/ezra",
-  "cache_dir": "/var/lib/ezra/cache",
-  "backup_dir": "/var/lib/ezra/backups",
-  "log_level": "info"
-}
+# Extract public key
+openssl pkey -in policy_priv.key -pubout -out policy_pub.key
+
+# Update PLAN_SIGNING_PRIVATE_KEY_PATH in .env
 ```
+
+4. (Optional) For advanced configuration, you can also use `config.json`. See `config.example.json` for the structure.
+
+#### Device Agent Configuration
+
+1. Copy the environment template:
+```bash
+cd agent
+cp .env.example .env
+```
+
+2. Edit `.env` and configure:
+   - **COMPANION_BASE_URL**: URL of your companion server (e.g., `https://companion.example.com:8443`)
+   - **POLICY_PUB_KEY_PATH**: Path to the Ed25519 public key (must match companion's private key)
+   - **DEVICE_ENROLLMENT_TOKEN**: (Optional) Token for device enrollment
+
+### Configuration Files vs Environment Variables
+
+- **`.env` files** (gitignored): Store sensitive data like API keys and secrets
+- **`.env.example` files** (committed): Templates showing what variables are needed
+- **`config.json` files**: Can be used for non-sensitive configuration alongside `.env`
 
 ## 🎯 Usage
 
@@ -191,15 +228,17 @@ ezractl request "Install custom bootloader for dual-boot"
 - **Backup & rollback**: Automatic backups before risky operations
 - **Signature verification**: All plans are verified before execution
 - **Rate limiting**: LLM API calls are rate-limited and monitored
+- **Environment variables**: Sensitive data stored in `.env` files (never committed to git)
+- **API key protection**: All API keys should be kept secure and rotated regularly
 
 ## 🛠️ Development
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.11+
-- Go 1.21+
-- pnpm 8+
+- **Node.js** 18+ and **pnpm** 8+
+- **Python** 3.11+
+- **Go** 1.21+
+- **OpenSSL** (for generating Ed25519 keys)
 
 ### Setup
 
@@ -207,12 +246,25 @@ ezractl request "Install custom bootloader for dual-boot"
 # Install dependencies
 pnpm install
 
-# Install Python dependencies
-cd agent && pip install -e .
-cd ../executor && pip install -e .
+# Install Python dependencies with dev tools
+cd agent && pip install -e .[dev]
+cd ../executor && pip install -e .[dev]
 
 # Install Go dependencies
-cd bootstrap && go mod download
+cd ../bootstrap && go mod download
+
+# Set up environment configuration
+cd ../companion
+cp .env.example .env
+# Edit .env and add your API keys
+
+cd ../agent
+cp .env.example .env
+# Edit .env with companion URL
+
+# Generate signing keys for development
+openssl genpkey -algorithm ed25519 -out ../companion/policy_priv.key
+openssl pkey -in ../companion/policy_priv.key -pubout -out ../agent/policy_pub.key
 ```
 
 ### Testing
